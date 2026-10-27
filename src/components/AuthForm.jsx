@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { usernameIsUsable, useUsernameCheck } from '../lib/useUsernameCheck'
+import UsernameField from './UsernameField'
 
 const inputClass =
   'w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-stone-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20'
@@ -38,6 +40,7 @@ function GoogleIcon() {
 function AuthForm({ message, onSuccess, initialMode = 'login' }) {
   const [mode, setMode] = useState(initialMode)
   const [name, setName] = useState('')
+  const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [agreed, setAgreed] = useState(false)
@@ -46,6 +49,7 @@ function AuthForm({ message, onSuccess, initialMode = 'login' }) {
   const [submitting, setSubmitting] = useState(false)
 
   const isSignup = mode === 'signup'
+  const usernameCheck = useUsernameCheck(isSignup ? username : '', null)
 
   function switchMode() {
     setMode(isSignup ? 'login' : 'signup')
@@ -76,6 +80,10 @@ function AuthForm({ message, onSuccess, initialMode = 'login' }) {
     e.preventDefault()
     setError('')
     setNotice('')
+    if (isSignup && !usernameIsUsable(usernameCheck.status)) {
+      setError(usernameCheck.message ?? 'Hãy đợi kiểm tra tên người dùng xong.')
+      return
+    }
     if (isSignup && !agreed) {
       setError(termsError)
       return
@@ -88,7 +96,7 @@ function AuthForm({ message, onSuccess, initialMode = 'login' }) {
         email,
         password,
         options: {
-          data: { full_name: name, terms_accepted_at: new Date().toISOString() },
+          data: { full_name: name, username, terms_accepted_at: new Date().toISOString() },
           emailRedirectTo: window.location.origin,
         },
       })
@@ -144,17 +152,20 @@ function AuthForm({ message, onSuccess, initialMode = 'login' }) {
 
         <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
           {isSignup && (
-            <label className="flex flex-col gap-1.5 text-sm font-medium text-stone-700">
-              Tên
-              <input
-                type="text"
-                required
-                autoComplete="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className={inputClass}
-              />
-            </label>
+            <>
+              <label className="flex flex-col gap-1.5 text-sm font-medium text-stone-700">
+                Tên hiển thị
+                <input
+                  type="text"
+                  required
+                  autoComplete="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className={inputClass}
+                />
+              </label>
+              <UsernameField value={username} onChange={setUsername} check={usernameCheck} />
+            </>
           )}
 
           <label className="flex flex-col gap-1.5 text-sm font-medium text-stone-700">

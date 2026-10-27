@@ -8,7 +8,7 @@ const navLinks = [
 ]
 
 function Layout() {
-  const { user, loading } = useAuth()
+  const { user, profile, loading } = useAuth()
   const { pathname } = useLocation()
 
   // The logged-out landing page is a bare welcome screen with no header.
@@ -51,6 +51,16 @@ function Layout() {
             </div>
           </nav>
         </header>
+      )}
+
+      {/* Accounts from before usernames existed, or whose pick was taken at signup. */}
+      {profile && !profile.username && pathname !== '/account' && (
+        <div className="border-b border-orange-200 bg-orange-50 px-4 py-2.5 text-center text-sm text-orange-800">
+          Bạn chưa có tên người dùng.{' '}
+          <Link to="/account" className="font-semibold underline">
+            Chọn ngay
+          </Link>
+        </div>
       )}
 
       <main>

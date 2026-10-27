@@ -5,7 +5,7 @@ export const MESSAGE_PAGE_SIZE = 50
 const IMAGE_BUCKET = 'chat-images'
 
 const conversationFields =
-  'id, client_id, hire_id, last_message_at, hire:hire_pages(hire_name, avatar_path), client:profiles(display_name, avatar_path)'
+  'id, client_id, hire_id, last_message_at, hire:hire_pages(hire_name, avatar_path), client:profiles(display_name, avatar_path, username)'
 
 // Finds the client's conversation with a Hire, creating it on first contact.
 export async function getOrCreateConversation(clientId, hireId) {

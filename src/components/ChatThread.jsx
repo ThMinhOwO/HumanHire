@@ -176,7 +176,11 @@ function ChatThread() {
           ) : (
             <p className="truncate font-semibold text-stone-900">{name}</p>
           )}
-          <p className="text-xs text-stone-500">{isClient ? 'Hire' : 'Khách'}</p>
+          <p className="text-xs text-stone-500">
+            {isClient
+              ? 'Hire'
+              : `Khách${conversation.client?.username ? ` · @${conversation.client.username}` : ''}`}
+          </p>
         </div>
         <SafetyMenu
           otherId={otherPartyId(conversation, user.id)}

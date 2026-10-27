@@ -108,7 +108,16 @@ function HirePage() {
         </div>
 
         <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-stone-900">{page.hire_name}</h1>
-        <p className="mt-2 text-stone-600">📍 {page.location}</p>
+        {page.owner?.username && <p className="text-sm text-stone-500">@{page.owner.username}</p>}
+        <p className="mt-2 flex flex-wrap items-baseline gap-x-2 text-stone-600">
+          <span>📍 {page.location}</span>
+          {page.tagline && (
+            <>
+              <span aria-hidden="true" className="text-stone-300">·</span>
+              <span className="text-stone-800">{page.tagline}</span>
+            </>
+          )}
+        </p>
 
         {blockStatus === 'you_blocked' && (
           <p className="mt-4 rounded-lg bg-stone-100 px-3 py-2 text-sm text-stone-600">

@@ -54,7 +54,9 @@ function UserMenu() {
         <div className="absolute right-0 mt-2 w-64 rounded-xl border border-stone-200 bg-white p-2 shadow-lg">
           <div className="border-b border-stone-100 px-3 pb-2 pt-1">
             <p className="truncate text-sm font-semibold text-stone-900">{displayName}</p>
-            <p className="truncate text-xs text-stone-500">{user.email}</p>
+            <p className="truncate text-xs text-stone-500">
+              {profile?.username ? `@${profile.username}` : user.email}
+            </p>
           </div>
 
           <div className="py-2">

@@ -30,6 +30,7 @@ function HireSetup() {
   const [existing, setExisting] = useState(null)
   const [hireName, setHireName] = useState('')
   const [location, setLocation] = useState('')
+  const [tagline, setTagline] = useState('')
   const [tos, setTos] = useState('')
   const [avatarFile, setAvatarFile] = useState(undefined)
   const [posterFile, setPosterFile] = useState(undefined)
@@ -44,6 +45,7 @@ function HireSetup() {
         setExisting(data)
         setHireName(data.hire_name)
         setLocation(data.location)
+        setTagline(data.tagline ?? '')
         setTos(data.tos)
       }
       setLoading(false)
@@ -70,6 +72,7 @@ function HireSetup() {
       user_id: user.id,
       hire_name: hireName.trim(),
       location: location.trim(),
+      tagline: tagline.trim(),
       tos: tos.trim(),
       avatar_path: avatar.path,
       poster_path: poster.path,
@@ -144,6 +147,23 @@ function HireSetup() {
           />
           <span className="font-normal text-stone-500">
             Khu vực bạn nhận việc. Đừng ghi địa chỉ nhà.
+          </span>
+        </label>
+
+        <label className="flex flex-col gap-1.5 text-sm font-medium text-stone-700">
+          Mô tả ngắn
+          <input
+            type="text"
+            required
+            maxLength={80}
+            value={tagline}
+            onChange={(e) => setTagline(e.target.value)}
+            placeholder="VD: Dạy kèm Toán lớp 10–12, ôn thi đại học"
+            className={inputClass}
+          />
+          <span className="flex justify-between gap-4 font-normal text-stone-500">
+            <span>Một dòng giới thiệu, hiện cạnh khu vực trên bảng tin.</span>
+            <span className="shrink-0">{tagline.length}/80</span>
           </span>
         </label>
 

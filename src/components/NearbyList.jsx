@@ -39,7 +39,15 @@ function HireCard({ hire, isYou }) {
         </div>
 
         <h3 className="mt-3 text-2xl font-bold text-stone-900">{hire.hire_name}</h3>
-        <p className="mt-1 text-stone-600">📍 {hire.location}</p>
+        <p className="mt-1 flex flex-wrap items-baseline gap-x-2 text-stone-600">
+          <span>📍 {hire.location}</span>
+          {hire.tagline && (
+            <>
+              <span aria-hidden="true" className="text-stone-300">·</span>
+              <span className="text-stone-800">{hire.tagline}</span>
+            </>
+          )}
+        </p>
 
         <div className="mt-4 rounded-2xl bg-stone-50 p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">Điều khoản</p>

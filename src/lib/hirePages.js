@@ -2,7 +2,11 @@ import { supabase } from './supabase'
 
 // Resolves to { data, error }; data is null when the user has no Hire page.
 export function getHirePage(userId) {
-  return supabase.from('hire_pages').select('*').eq('user_id', userId).maybeSingle()
+  return supabase
+    .from('hire_pages')
+    .select('*, owner:profiles!hire_pages_user_id_profiles_fkey(username)')
+    .eq('user_id', userId)
+    .maybeSingle()
 }
 
 // Every Hire page, newest first. Will become a distance-sorted query later.

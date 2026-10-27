@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { deletePublicImage, publicImageUrl, uploadPublicImage } from '../lib/images'
 import { updateProfile } from '../lib/profiles'
+import { usernameIsUsable, useUsernameCheck } from '../lib/useUsernameCheck'
 import ImagePicker from './ImagePicker'
+import UsernameField from './UsernameField'
 
 const inputClass =
   'w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-stone-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20'
@@ -10,6 +12,8 @@ const inputClass =
 function AccountForm({ profile }) {
   const { user, refreshProfile } = useAuth()
   const [displayName, setDisplayName] = useState(profile.display_name)
+  const [username, setUsername] = useState(profile.username ?? '')
+  const usernameCheck = useUsernameCheck(username, profile.username)
   // undefined = unchanged, File = new, null = removed.
   const [avatarFile, setAvatarFile] = useState(undefined)
   const [saving, setSaving] = useState(false)
@@ -20,6 +24,10 @@ function AccountForm({ profile }) {
     e.preventDefault()
     setError('')
     setSaved(false)
+    if (!usernameIsUsable(usernameCheck.status)) {
+      setError(usernameCheck.message ?? 'Hãy đợi kiểm tra tên người dùng xong.')
+      return
+    }
     setSaving(true)
 
     let avatarPath = profile.avatar_path
@@ -37,10 +45,12 @@ function AccountForm({ profile }) {
 
     const { error } = await updateProfile(user.id, {
       display_name: displayName.trim(),
+      username,
       avatar_path: avatarPath,
     })
     if (error) {
-      setError(error.message)
+      // 23505 = unique violation: someone took the username since it was checked.
+      setError(error.code === '23505' ? 'Tên người dùng này vừa có người lấy. Hãy chọn tên khác.' : error.message)
     } else {
       if (profile.avatar_path !== avatarPath) deletePublicImage(profile.avatar_path)
       setAvatarFile(undefined)
@@ -71,6 +81,8 @@ function AccountForm({ profile }) {
           className={inputClass}
         />
       </label>
+
+      <UsernameField value={username} onChange={setUsername} check={usernameCheck} />
 
       <label className="flex flex-col gap-1.5 text-sm font-medium text-stone-700">
         Email
