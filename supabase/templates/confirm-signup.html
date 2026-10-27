@@ -1,0 +1,23 @@
+<!--
+  "Confirm signup" email template. Paste into Supabase:
+  Authentication → Emails → Templates → Confirm signup → Message body.
+  Subject: Mã xác nhận HumanHire: {{ .Token }}
+-->
+<div style="font-family: Arial, Helvetica, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px; color: #1c1917;">
+  <p style="font-size: 24px; font-weight: 800; margin: 0 0 24px;">
+    Human<span style="color: #ea580c;">Hire</span>
+  </p>
+
+  <p style="font-size: 16px; margin: 0 0 16px;">Mã xác nhận email của bạn là:</p>
+
+  <p style="font-size: 36px; font-weight: 700; letter-spacing: 8px; font-family: 'Courier New', monospace; background: #fff7ed; border-radius: 12px; padding: 16px; text-align: center; margin: 0 0 16px;">
+    {{ .Token }}
+  </p>
+
+  <p style="font-size: 14px; color: #57534e; margin: 0 0 8px;">
+    Nhập mã này vào trang đăng ký HumanHire. Mã có hiệu lực trong 1 giờ.
+  </p>
+  <p style="font-size: 14px; color: #57534e; margin: 0;">
+    Nếu bạn không đăng ký HumanHire, hãy bỏ qua email này.
+  </p>
+</div>

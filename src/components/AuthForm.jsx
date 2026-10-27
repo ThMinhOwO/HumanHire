@@ -1,27 +1,14 @@
 import { useState } from 'react'
+import { authErrorMessage } from '../lib/authErrors'
 import { supabase } from '../lib/supabase'
 import { usernameIsUsable, useUsernameCheck } from '../lib/useUsernameCheck'
 import UsernameField from './UsernameField'
+import VerifyEmailForm from './VerifyEmailForm'
 
 const inputClass =
   'w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-stone-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20'
 
 const termsError = 'Vui lòng đồng ý với Điều khoản dịch vụ và Chính sách quyền riêng tư.'
-
-// Supabase's auth errors are in English; translate the common ones.
-const authErrors = {
-  invalid_credentials: 'Email hoặc mật khẩu không đúng.',
-  user_already_exists: 'Email này đã được đăng ký. Hãy đăng nhập.',
-  email_exists: 'Email này đã được đăng ký. Hãy đăng nhập.',
-  email_not_confirmed: 'Email chưa được xác nhận. Kiểm tra hộp thư của bạn.',
-  weak_password: 'Mật khẩu quá yếu. Hãy dùng ít nhất 6 ký tự.',
-  over_email_send_rate_limit: 'Bạn thử quá nhiều lần. Vui lòng đợi một lát.',
-  over_request_rate_limit: 'Bạn thử quá nhiều lần. Vui lòng đợi một lát.',
-}
-
-function authErrorMessage(error) {
-  return authErrors[error.code] ?? error.message
-}
 
 // Hidden until the Google Cloud OAuth app is fully set up.
 const SHOW_GOOGLE_LOGIN = false
@@ -45,8 +32,9 @@ function AuthForm({ message, onSuccess, initialMode = 'login' }) {
   const [password, setPassword] = useState('')
   const [agreed, setAgreed] = useState(false)
   const [error, setError] = useState('')
-  const [notice, setNotice] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  // Set once a confirmation code has been emailed: { email, notice }.
+  const [verification, setVerification] = useState(null)
 
   const isSignup = mode === 'signup'
   const usernameCheck = useUsernameCheck(isSignup ? username : '', null)
@@ -54,7 +42,6 @@ function AuthForm({ message, onSuccess, initialMode = 'login' }) {
   function switchMode() {
     setMode(isSignup ? 'login' : 'signup')
     setError('')
-    setNotice('')
   }
 
   async function handleGoogle() {
@@ -79,7 +66,6 @@ function AuthForm({ message, onSuccess, initialMode = 'login' }) {
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
-    setNotice('')
     if (isSignup && !usernameIsUsable(usernameCheck.status)) {
       setError(usernameCheck.message ?? 'Hãy đợi kiểm tra tên người dùng xong.')
       return
@@ -105,12 +91,19 @@ function AuthForm({ message, onSuccess, initialMode = 'login' }) {
       } else if (data.session) {
         onSuccess?.()
       } else {
-        // Email confirmation is on: no session until the link is clicked.
-        setNotice(`Kiểm tra hộp thư ${email} và bấm vào liên kết xác nhận để hoàn tất đăng ký.`)
+        // Email confirmation is on: no session until the emailed code is entered.
+        setVerification({ email })
       }
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) {
+      if (error?.code === 'email_not_confirmed') {
+        // Signed up but never confirmed: send a fresh code and ask for it.
+        const resent = await supabase.auth.resend({ type: 'signup', email })
+        setVerification({
+          email,
+          notice: resent.error ? null : 'Email chưa được xác nhận. Chúng tôi vừa gửi mã mới.',
+        })
+      } else if (error) {
         setError(authErrorMessage(error))
       } else {
         onSuccess?.()
@@ -118,6 +111,17 @@ function AuthForm({ message, onSuccess, initialMode = 'login' }) {
     }
 
     setSubmitting(false)
+  }
+
+  if (verification) {
+    return (
+      <VerifyEmailForm
+        email={verification.email}
+        initialNotice={verification.notice}
+        onBack={() => setVerification(null)}
+        onSuccess={onSuccess}
+      />
+    )
   }
 
   return (
@@ -215,7 +219,6 @@ function AuthForm({ message, onSuccess, initialMode = 'login' }) {
           )}
 
           {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
-          {notice && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{notice}</p>}
 
           <button
             type="submit"
