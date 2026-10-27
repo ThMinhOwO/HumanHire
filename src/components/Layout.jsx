@@ -1,5 +1,6 @@
 import { Link, NavLink, Outlet, useLocation } from 'react-router'
 import { useAuth } from '../auth/AuthContext'
+import UserMenu from './UserMenu'
 
 const navLinks = [
   { to: '/nearby', label: 'Nearby' },
@@ -7,11 +8,9 @@ const navLinks = [
 ]
 
 function Layout() {
-  const { user, loading, signOut } = useAuth()
-
+  const { user, loading } = useAuth()
   const { pathname } = useLocation()
 
-  const displayName = user?.user_metadata?.full_name || user?.email
   // The logged-out landing page is a bare welcome screen with no header.
   const showHeader = !(pathname === '/' && (loading || !user))
 
@@ -40,17 +39,7 @@ function Layout() {
 
               {!loading &&
                 (user ? (
-                  <>
-                    <span className="ml-2 hidden max-w-40 truncate text-sm text-stone-500 sm:inline">
-                      {displayName}
-                    </span>
-                    <button
-                      onClick={signOut}
-                      className="ml-1 rounded-lg px-3 py-2 text-sm font-medium text-stone-600 transition hover:bg-stone-200"
-                    >
-                      Log out
-                    </button>
-                  </>
+                  <UserMenu />
                 ) : (
                   <Link
                     to="/login"
