@@ -3,8 +3,8 @@ import { useAuth } from '../auth/AuthContext'
 import UserMenu from './UserMenu'
 
 const navLinks = [
-  { to: '/nearby', label: 'Nearby' },
-  { to: '/chats', label: 'Chats' },
+  { to: '/nearby', label: 'Quanh đây' },
+  { to: '/chats', label: 'Tin nhắn' },
 ]
 
 function Layout() {
@@ -45,7 +45,7 @@ function Layout() {
                     to="/login"
                     className="ml-1 rounded-lg bg-orange-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-orange-700"
                   >
-                    Log in
+                    Đăng nhập
                   </Link>
                 ))}
             </div>

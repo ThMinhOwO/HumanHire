@@ -1,37 +1,25 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { useAuth } from '../auth/AuthContext'
 import { getHirePage } from '../lib/hirePages'
+import { publicImageUrl } from '../lib/images'
+import { useDismiss } from '../lib/useDismiss'
+import Avatar from './Avatar'
 
 const itemClass =
   'block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-stone-700 transition hover:bg-stone-100'
 
 function UserMenu() {
-  const { user, signOut } = useAuth()
+  const { user, profile, signOut } = useAuth()
   const [open, setOpen] = useState(false)
   // undefined = still loading, null = no Hire page yet.
   const [hirePage, setHirePage] = useState(undefined)
   const menuRef = useRef(null)
 
-  const displayName = user.user_metadata?.full_name || user.email
+  const displayName = profile?.display_name || user.user_metadata?.full_name || user.email
 
-  useEffect(() => {
-    if (!open) return
-
-    function handlePointerDown(e) {
-      if (!menuRef.current?.contains(e.target)) setOpen(false)
-    }
-    function handleKeyDown(e) {
-      if (e.key === 'Escape') setOpen(false)
-    }
-
-    document.addEventListener('pointerdown', handlePointerDown)
-    document.addEventListener('keydown', handleKeyDown)
-    return () => {
-      document.removeEventListener('pointerdown', handlePointerDown)
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [open])
+  const close = useCallback(() => setOpen(false), [])
+  useDismiss(menuRef, open, close)
 
   async function toggle() {
     const next = !open
@@ -44,8 +32,6 @@ function UserMenu() {
     }
   }
 
-  const close = () => setOpen(false)
-
   return (
     <div ref={menuRef} className="relative ml-1">
       <button
@@ -53,9 +39,7 @@ function UserMenu() {
         aria-expanded={open}
         className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-stone-700 transition hover:bg-stone-200"
       >
-        <span className="flex size-7 items-center justify-center rounded-full bg-orange-200 text-xs font-bold text-orange-800">
-          {displayName[0].toUpperCase()}
-        </span>
+        <Avatar name={displayName} src={publicImageUrl(profile?.avatar_path)} size="sm" />
         <span className="hidden max-w-32 truncate sm:inline">{displayName}</span>
         <svg viewBox="0 0 20 20" fill="currentColor" className={`size-4 transition ${open ? 'rotate-180' : ''}`}>
           <path
@@ -75,22 +59,25 @@ function UserMenu() {
 
           <div className="py-2">
             {hirePage === undefined ? (
-              <p className="px-3 py-2 text-sm text-stone-400">Loading…</p>
+              <p className="px-3 py-2 text-sm text-stone-400">Đang tải…</p>
             ) : hirePage ? (
               <Link to={`/hire/${user.id}`} onClick={close} className={itemClass}>
-                Visit your Hire page
+                Xem trang Hire của bạn
                 <span className="block truncate text-xs font-normal text-stone-500">{hirePage.hire_name}</span>
               </Link>
             ) : (
               <Link to="/hire/setup" onClick={close} className={`${itemClass} text-orange-700`}>
-                Setup your Hire page
+                Tạo trang Hire của bạn
               </Link>
             )}
+            <Link to="/account" onClick={close} className={itemClass}>
+              Tài khoản
+            </Link>
           </div>
 
           <div className="border-t border-stone-100 pt-2">
             <button onClick={signOut} className={itemClass}>
-              Log out
+              Đăng xuất
             </button>
           </div>
         </div>

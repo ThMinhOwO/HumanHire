@@ -2,25 +2,37 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useAuth } from '../auth/AuthContext'
 import { getHirePage, saveHirePage } from '../lib/hirePages'
+import { deletePublicImage, publicImageUrl, uploadPublicImage } from '../lib/images'
+import ImagePicker from './ImagePicker'
 
 const inputClass =
   'w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-stone-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20'
 
-const tosPlaceholder = `For example:
-• We only meet in public places.
-• Payment is due before the session starts.
-• Cancel at least 24 hours ahead or the booking is non-refundable.
-• No physical contact beyond a handshake.`
+const tosPlaceholder = `Ví dụ:
+• Chỉ gặp ở nơi công cộng.
+• Thanh toán trước khi bắt đầu.
+• Huỷ trước ít nhất 24 giờ, nếu không sẽ không hoàn tiền.
+• Không tiếp xúc cơ thể ngoài bắt tay.`
+
+// Uploads a newly picked image. file is undefined (unchanged), a File (new)
+// or null (removed). Resolves to { path, error } with the path to save.
+async function resolveImage(userId, kind, file, currentPath) {
+  if (file === undefined) return { path: currentPath, error: null }
+  if (file === null) return { path: null, error: null }
+  return uploadPublicImage(userId, kind, file)
+}
 
 function HireSetup() {
   const { user } = useAuth()
   const navigate = useNavigate()
 
   const [loading, setLoading] = useState(true)
-  const [isEditing, setIsEditing] = useState(false)
+  const [existing, setExisting] = useState(null)
   const [hireName, setHireName] = useState('')
   const [location, setLocation] = useState('')
   const [tos, setTos] = useState('')
+  const [avatarFile, setAvatarFile] = useState(undefined)
+  const [posterFile, setPosterFile] = useState(undefined)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -29,7 +41,7 @@ function HireSetup() {
     getHirePage(user.id).then(({ data, error }) => {
       if (error) setError(error.message)
       if (data) {
-        setIsEditing(true)
+        setExisting(data)
         setHireName(data.hire_name)
         setLocation(data.location)
         setTos(data.tos)
@@ -43,19 +55,36 @@ function HireSetup() {
     setError('')
     setSaving(true)
 
+    const [avatar, poster] = await Promise.all([
+      resolveImage(user.id, 'hire-avatar', avatarFile, existing?.avatar_path ?? null),
+      resolveImage(user.id, 'poster', posterFile, existing?.poster_path ?? null),
+    ])
+    const uploadError = avatar.error || poster.error
+    if (uploadError) {
+      setError(`Không tải được ảnh lên: ${uploadError.message}`)
+      setSaving(false)
+      return
+    }
+
     const { error } = await saveHirePage({
       user_id: user.id,
       hire_name: hireName.trim(),
       location: location.trim(),
       tos: tos.trim(),
+      avatar_path: avatar.path,
+      poster_path: poster.path,
     })
 
     if (error) {
       setError(error.message)
       setSaving(false)
-    } else {
-      navigate(`/hire/${user.id}`)
+      return
     }
+
+    // Clean up images that were replaced or removed.
+    if (existing?.avatar_path !== avatar.path) deletePublicImage(existing?.avatar_path)
+    if (existing?.poster_path !== poster.path) deletePublicImage(existing?.poster_path)
+    navigate(`/hire/${user.id}`)
   }
 
   if (loading) return null
@@ -63,15 +92,29 @@ function HireSetup() {
   return (
     <section className="mx-auto max-w-2xl px-4 py-8">
       <h2 className="text-2xl font-bold text-stone-900">
-        {isEditing ? 'Edit your Hire page' : 'Setup your Hire page'}
+        {existing ? 'Chỉnh sửa trang Hire' : 'Tạo trang Hire của bạn'}
       </h2>
-      <p className="mt-1 text-stone-500">
-        This is the page people see when they want to hire you.
-      </p>
+      <p className="mt-1 text-stone-500">Đây là trang mọi người xem khi muốn thuê bạn.</p>
 
-      <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-6">
+      <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-8">
+        <ImagePicker
+          label="Ảnh poster"
+          hint="Ảnh lớn hiển thị trên bảng tin. Nên dùng ảnh ngang."
+          shape="poster"
+          currentUrl={publicImageUrl(existing?.poster_path)}
+          onChange={setPosterFile}
+        />
+
+        <ImagePicker
+          label="Ảnh đại diện trang"
+          hint="Có thể khác ảnh đại diện tài khoản của bạn."
+          shape="avatar"
+          currentUrl={publicImageUrl(existing?.avatar_path)}
+          onChange={setAvatarFile}
+        />
+
         <label className="flex flex-col gap-1.5 text-sm font-medium text-stone-700">
-          Hire name
+          Tên Hire
           <input
             type="text"
             required
@@ -79,16 +122,16 @@ function HireSetup() {
             maxLength={50}
             value={hireName}
             onChange={(e) => setHireName(e.target.value)}
-            placeholder="e.g. Linh's Math Lab"
+            placeholder="VD: Gia sư Toán cô Linh"
             className={inputClass}
           />
           <span className="font-normal text-stone-500">
-            The name you're hired under. It can be different from your account name.
+            Tên bạn dùng để nhận việc, có thể khác tên tài khoản.
           </span>
         </label>
 
         <label className="flex flex-col gap-1.5 text-sm font-medium text-stone-700">
-          Location
+          Khu vực
           <input
             type="text"
             required
@@ -96,16 +139,16 @@ function HireSetup() {
             maxLength={100}
             value={location}
             onChange={(e) => setLocation(e.target.value)}
-            placeholder="e.g. District 1, Ho Chi Minh City"
+            placeholder="VD: Quận 1, TP. Hồ Chí Minh"
             className={inputClass}
           />
           <span className="font-normal text-stone-500">
-            The area you work in. Don't put your home address.
+            Khu vực bạn nhận việc. Đừng ghi địa chỉ nhà.
           </span>
         </label>
 
         <label className="flex flex-col gap-1.5 text-sm font-medium text-stone-700">
-          Terms for hiring you
+          Điều khoản khi thuê bạn
           <textarea
             required
             minLength={20}
@@ -117,7 +160,7 @@ function HireSetup() {
             className={`${inputClass} resize-y`}
           />
           <span className="flex justify-between gap-4 font-normal text-stone-500">
-            <span>Your rules: what you will and won't do, payment, cancellations, boundaries.</span>
+            <span>Quy tắc của bạn: làm gì và không làm gì, thanh toán, huỷ lịch, giới hạn.</span>
             <span className="shrink-0">{tos.length}/5000</span>
           </span>
         </label>
@@ -130,14 +173,14 @@ function HireSetup() {
             disabled={saving}
             className="rounded-lg bg-orange-600 px-6 py-3 font-semibold text-white transition hover:bg-orange-700 disabled:opacity-60"
           >
-            {saving ? 'Saving…' : isEditing ? 'Save changes' : 'Create Hire page'}
+            {saving ? 'Đang lưu…' : existing ? 'Lưu thay đổi' : 'Tạo trang Hire'}
           </button>
           <button
             type="button"
             onClick={() => navigate(-1)}
             className="rounded-lg px-6 py-3 font-semibold text-stone-600 transition hover:bg-stone-200"
           >
-            Cancel
+            Huỷ
           </button>
         </div>
       </form>

@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router'
 import RequireAuth from './auth/RequireAuth'
+import AccountPage from './components/AccountPage'
 import ChatList from './components/ChatList'
 import ChatThread from './components/ChatThread'
 import HirePage from './components/HirePage'
@@ -17,7 +18,7 @@ function App() {
         <Route
           path="nearby"
           element={
-            <RequireAuth message="Create an account or log in to find people near you.">
+            <RequireAuth message="Đăng ký hoặc đăng nhập để tìm người quanh bạn.">
               <NearbyList />
             </RequireAuth>
           }
@@ -25,7 +26,7 @@ function App() {
         <Route
           path="chats"
           element={
-            <RequireAuth message="Create an account or log in to see your chats.">
+            <RequireAuth message="Đăng ký hoặc đăng nhập để xem tin nhắn của bạn.">
               <ChatList />
             </RequireAuth>
           }
@@ -33,7 +34,7 @@ function App() {
         <Route
           path="chats/:conversationId"
           element={
-            <RequireAuth message="Create an account or log in to see your chats.">
+            <RequireAuth message="Đăng ký hoặc đăng nhập để xem tin nhắn của bạn.">
               <ChatThread />
             </RequireAuth>
           }
@@ -41,7 +42,7 @@ function App() {
         <Route
           path="hire/setup"
           element={
-            <RequireAuth message="Create an account or log in to set up your Hire page.">
+            <RequireAuth message="Đăng ký hoặc đăng nhập để tạo trang Hire.">
               <HireSetup />
             </RequireAuth>
           }
@@ -49,8 +50,16 @@ function App() {
         <Route
           path="hire/:userId"
           element={
-            <RequireAuth message="Create an account or log in to view this Hire page.">
+            <RequireAuth message="Đăng ký hoặc đăng nhập để xem trang Hire này.">
               <HirePage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="account"
+          element={
+            <RequireAuth message="Đăng ký hoặc đăng nhập để xem tài khoản.">
+              <AccountPage />
             </RequireAuth>
           }
         />
