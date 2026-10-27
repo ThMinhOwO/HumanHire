@@ -6,6 +6,9 @@ const inputClass =
 
 const termsError = 'Please agree to the Terms of Service and Privacy Policy.'
 
+// Hidden until the Google Cloud OAuth app is fully set up.
+const SHOW_GOOGLE_LOGIN = false
+
 function GoogleIcon() {
   return (
     <svg viewBox="0 0 48 48" className="size-5" aria-hidden="true">
@@ -17,8 +20,8 @@ function GoogleIcon() {
   )
 }
 
-function AuthForm({ message, onSuccess }) {
-  const [mode, setMode] = useState('login')
+function AuthForm({ message, onSuccess, initialMode = 'login' }) {
+  const [mode, setMode] = useState(initialMode)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -104,23 +107,27 @@ function AuthForm({ message, onSuccess }) {
           {message ?? (isSignup ? 'Join HumanHire to hire or get hired.' : 'Log in to continue.')}
         </p>
 
-        <button
-          type="button"
-          onClick={handleGoogle}
-          disabled={submitting}
-          className="mt-6 flex w-full items-center justify-center gap-3 rounded-lg border border-stone-300 bg-white py-2.5 font-medium text-stone-800 transition hover:bg-stone-50 disabled:opacity-60"
-        >
-          <GoogleIcon />
-          Continue with Google
-        </button>
+        {SHOW_GOOGLE_LOGIN && (
+          <>
+            <button
+              type="button"
+              onClick={handleGoogle}
+              disabled={submitting}
+              className="mt-6 flex w-full items-center justify-center gap-3 rounded-lg border border-stone-300 bg-white py-2.5 font-medium text-stone-800 transition hover:bg-stone-50 disabled:opacity-60"
+            >
+              <GoogleIcon />
+              Continue with Google
+            </button>
 
-        <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-wide text-stone-400">
-          <span className="h-px flex-1 bg-stone-200" />
-          or
-          <span className="h-px flex-1 bg-stone-200" />
-        </div>
+            <div className="mt-5 flex items-center gap-3 text-xs uppercase tracking-wide text-stone-400">
+              <span className="h-px flex-1 bg-stone-200" />
+              or
+              <span className="h-px flex-1 bg-stone-200" />
+            </div>
+          </>
+        )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
           {isSignup && (
             <label className="flex flex-col gap-1.5 text-sm font-medium text-stone-700">
               Name
