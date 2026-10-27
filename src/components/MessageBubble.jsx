@@ -17,7 +17,7 @@ function MessageBubble({ message, mine, imageUrl, onImageLoad }) {
                 src={imageUrl}
                 alt="Ảnh được gửi"
                 onLoad={onImageLoad}
-                className="max-h-72 w-full object-cover"
+                className="block h-auto max-h-96 w-auto max-w-full"
               />
             </a>
           ) : (

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { validateImage } from '../lib/images'
+import { IMAGE_SIZES, prepareImage } from '../lib/images'
 
 // Picks one image with a live preview. shape is 'avatar' (circle) or 'poster'
 // (wide banner). currentUrl is the saved image; onChange gets the new File or
@@ -8,6 +8,7 @@ function ImagePicker({ label, hint, shape, currentUrl, onChange }) {
   const [previewUrl, setPreviewUrl] = useState(null)
   const [removed, setRemoved] = useState(false)
   const [error, setError] = useState('')
+  const [preparing, setPreparing] = useState(false)
   const inputRef = useRef(null)
 
   // Free the preview's object URL when it's replaced or the picker unmounts.
@@ -17,20 +18,22 @@ function ImagePicker({ label, hint, shape, currentUrl, onChange }) {
     }
   }, [previewUrl])
 
-  function handleChange(e) {
+  async function handleChange(e) {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
 
-    const problem = validateImage(file)
-    if (problem) {
-      setError(problem)
+    setError('')
+    setPreparing(true)
+    const result = await prepareImage(file, shape === 'avatar' ? IMAGE_SIZES.avatar : IMAGE_SIZES.poster)
+    setPreparing(false)
+    if (result.error) {
+      setError(result.error)
       return
     }
-    setError('')
     setRemoved(false)
-    setPreviewUrl(URL.createObjectURL(file))
-    onChange(file)
+    setPreviewUrl(URL.createObjectURL(result.file))
+    onChange(result.file)
   }
 
   function handleRemove() {
@@ -79,6 +82,7 @@ function ImagePicker({ label, hint, shape, currentUrl, onChange }) {
               </button>
             )}
           </div>
+          {preparing && <span className="text-stone-500">Đang xử lý ảnh…</span>}
           {hint && <span className="text-stone-500">{hint}</span>}
         </div>
       </div>
@@ -88,7 +92,7 @@ function ImagePicker({ label, hint, shape, currentUrl, onChange }) {
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif"
+        accept="image/*"
         onChange={handleChange}
         className="hidden"
       />
