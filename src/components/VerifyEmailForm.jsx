@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react'
 import { authErrorMessage } from '../lib/authErrors'
 import { supabase } from '../lib/supabase'
 
-// Must match "Email OTP Length" in Supabase (Authentication → Providers → Email).
-const CODE_LENGTH = 6
+// Supabase's "Email OTP Length" (Authentication → Providers → Email) can be
+// 6-10 digits, so accept any of those rather than assuming one.
+const MIN_CODE_LENGTH = 6
+const MAX_CODE_LENGTH = 10
 const RESEND_COOLDOWN_SECONDS = 60
 
 // Second step of signup: enter the code from the confirmation email.
@@ -37,14 +39,18 @@ function VerifyEmailForm({ email, initialNotice, onBack, onSuccess }) {
 
   function handleChange(e) {
     // Accept pasted codes like "123 456" or "Mã: 123456".
-    const digits = e.target.value.replace(/\D/g, '').slice(0, CODE_LENGTH)
+    const digits = e.target.value.replace(/\D/g, '').slice(0, MAX_CODE_LENGTH)
+    // A paste or autofill adds the whole code at once, so submit it right
+    // away. Typed codes wait for the button, since we can't tell when the
+    // user has finished typing.
+    const filledAtOnce = digits.length - code.length > 1
     setCode(digits)
-    if (digits.length === CODE_LENGTH) verify(digits)
+    if (filledAtOnce && digits.length >= MIN_CODE_LENGTH) verify(digits)
   }
 
   function handleSubmit(e) {
     e.preventDefault()
-    if (code.length === CODE_LENGTH) verify(code)
+    if (code.length >= MIN_CODE_LENGTH) verify(code)
   }
 
   async function resend() {
@@ -65,7 +71,7 @@ function VerifyEmailForm({ email, initialNotice, onBack, onSuccess }) {
       <div className="w-full max-w-sm rounded-2xl border border-stone-200 bg-white p-6 shadow-sm sm:p-8">
         <h2 className="text-2xl font-bold text-stone-900">Nhập mã xác nhận</h2>
         <p className="mt-1 text-sm text-stone-500">
-          Chúng tôi đã gửi mã {CODE_LENGTH} số đến <span className="font-medium text-stone-800">{email}</span>.
+          Chúng tôi đã gửi mã xác nhận đến <span className="font-medium text-stone-800">{email}</span>.
           Hãy kiểm tra cả thư mục Spam.
         </p>
 
@@ -76,11 +82,11 @@ function VerifyEmailForm({ email, initialNotice, onBack, onSuccess }) {
             autoComplete="one-time-code"
             autoFocus
             aria-label="Mã xác nhận"
-            placeholder={'•'.repeat(CODE_LENGTH)}
+            placeholder="••••••"
             value={code}
             onChange={handleChange}
             disabled={verifying}
-            className="w-full rounded-xl border border-stone-300 bg-white px-3 py-4 text-center font-mono text-3xl tracking-[0.5em] text-stone-900 outline-none transition placeholder:text-stone-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 disabled:opacity-60"
+            className="w-full rounded-xl border border-stone-300 bg-white px-3 py-4 text-center font-mono text-2xl tracking-[0.3em] text-stone-900 outline-none transition placeholder:text-stone-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 disabled:opacity-60"
           />
 
           {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
@@ -88,7 +94,7 @@ function VerifyEmailForm({ email, initialNotice, onBack, onSuccess }) {
 
           <button
             type="submit"
-            disabled={verifying || code.length < CODE_LENGTH}
+            disabled={verifying || code.length < MIN_CODE_LENGTH}
             className="rounded-lg bg-orange-600 py-3 font-semibold text-white transition hover:bg-orange-700 disabled:opacity-60"
           >
             {verifying ? 'Đang xác nhận…' : 'Xác nhận'}
